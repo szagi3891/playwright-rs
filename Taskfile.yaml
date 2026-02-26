@@ -1,0 +1,17 @@
+version: "3"
+
+tasks:
+  playwright:
+    desc: Run the playwright-rs main app
+    cmds:
+      - cargo run
+
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  34:
+    desc: Run the thirtyfour docker example
+    cmds:
+      - cargo run --example thirtyfour_docker
