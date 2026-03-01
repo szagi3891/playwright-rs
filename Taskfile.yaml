@@ -15,3 +15,9 @@ tasks:
     desc: Run the thirtyfour docker example
     cmds:
       - cargo run --example thirtyfour_docker
+
+  trace:
+    desc: traceview 
+    cmds:
+      - cargo run --example traceview
+
