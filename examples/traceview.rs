@@ -8,9 +8,22 @@ struct DockerContainer {
 }
 
 impl DockerContainer {
-    fn new(image: &str, port: u16) -> Result<Self, Box<dyn std::error::Error>> {
+    fn new(
+        image: &str,
+        port: u16,
+        host_traces_dir: &std::path::Path,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let output = Command::new("docker")
-            .args(["run", "-d", "--rm", "-p", &format!("{}:3000", port), image])
+            .args([
+                "run",
+                "-d",
+                "--rm",
+                "-p",
+                &format!("{}:3000", port),
+                "-v",
+                &format!("{}:/trace-output", host_traces_dir.display()),
+                image,
+            ])
             .output()?;
 
         if !output.status.success() {
@@ -40,8 +53,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Ensure traces directory exists
     std::fs::create_dir_all(traces_dir)?;
 
+    let cur_dir = std::env::current_dir()?;
+    let host_traces_dir = cur_dir.join(traces_dir);
+
     // Start browserless container
-    let _container = DockerContainer::new("ghcr.io/browserless/chromium", port)?;
+    let _container = DockerContainer::new("ghcr.io/browserless/chromium", port, &host_traces_dir)?;
 
     // Launch Playwright
     let playwright = Playwright::launch().await?;
@@ -76,7 +92,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Ustaw opcje kontekstu z traces_dir
     let context_options = BrowserContextOptions::builder()
-        .traces_dir(traces_dir.to_string())
+        // Save inside the container at the mount point
+        .traces_dir("/trace-output".to_string())
         .build();
     let context = browser.new_context_with_options(context_options).await?;
     let page = context.new_page().await?;
